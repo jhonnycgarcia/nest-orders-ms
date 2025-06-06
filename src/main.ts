@@ -12,8 +12,9 @@ async function bootstrap() {
       port: envs.PORT,
     }
   });
-  const logger = new Logger('Main');
+  const logger = new Logger(bootstrap.name);
 
+  app.listen();
   logger.log(`Microservice orders is running on port ${envs.PORT}`);
 }
 bootstrap();
