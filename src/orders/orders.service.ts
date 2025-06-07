@@ -2,6 +2,7 @@ import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from 
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PrismaClient } from 'generated/prisma';
 import { RpcException } from '@nestjs/microservices';
+import { OrderPaginationDto } from './dto';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -19,8 +20,35 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  findAll() {
-    return `This action returns all orders`;
+  async findAll(orderPaginationDto: OrderPaginationDto) {
+    const { page, limit, status } = orderPaginationDto;
+
+    
+    const total = await this.order.count({
+      where: {
+        status,
+      },
+    });
+    
+    const lastPage = Math.ceil(total / limit!);
+    const skip = (page! - 1) * limit!;
+    const orders = await this.order.findMany({
+      skip,
+      take: limit,
+      where: {
+        status,
+      },
+    });
+
+    return {
+      data: orders,
+      meta: {
+        total,
+        page: page!,
+        lastPage,
+        limit: limit!,
+      },
+    };
   }
 
   async findOne(id: string) {
