@@ -121,6 +121,15 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   async findOne(id: string) {
     const order = await this.order.findUnique({
       where: { id },
+      include: {
+        orderItems: {
+          select: {
+            price: true,
+            quantity: true,
+            product: true,
+          }
+        }
+      }
     });
 
     if (!order) {
@@ -130,6 +139,17 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
         message: `Order not found with id ${id}`,
       });
     }
+
+    const productIds = order.orderItems.map((item) => item.product);
+
+    const products = await firstValueFrom(
+      this.productsService.send({ cmd: 'validate_products' }, { ids: productIds })
+    );
+
+    order.orderItems = order.orderItems.map((item) => ({
+      ...item,
+      name: products.find((product: any) => product.id === item.product).name,
+    }));
 
     return order;
   }
