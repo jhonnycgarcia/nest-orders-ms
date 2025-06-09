@@ -52,13 +52,32 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
           status: 'PENDING', // Add required status field
           orderItems: {
             createMany: {
-              data: [],
+              data: items.map((item) => ({
+                product: item.productId,
+                quantity: item.quantity,
+                price: products.find((product: any) => product.id === item.productId).price,
+              })),
             },  
           },
         },
+        include: {
+          orderItems: {
+            select: {
+              price: true,
+              quantity: true,
+              product: true,
+            }
+          }
+        },
       });
 
-      return order;
+      return {
+        ...order,
+        orderItems: order.orderItems.map((item) => ({
+          ...item,
+          name: products.find((product: any) => product.id === item.product).name,
+        })),
+      };
       
     } catch (error) {
       throw new RpcException({
