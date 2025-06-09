@@ -23,22 +23,49 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   }
 
   async create(createOrderDto: CreateOrderDto) {
-    const { items } = createOrderDto;
-    const ids = items.map((item) => item.productId);
+    try {
+      const { items } = createOrderDto;
+      const ids = items.map((item) => item.productId);
+  
+      // 1. Confirmar los Ids de los productos
+      const products = await firstValueFrom(
+        this.productsService.send({ cmd: 'validate_products' }, { ids })
+      );
 
-    const products = await firstValueFrom(
-      this.productsService.send({ cmd: 'validate_products' }, { ids })
-    );
+      // 2. Calcular el total de los valores
+      const totalAmount = items.reduce((acc, orderItem) => {
+        const { productId, quantity } = orderItem;
+        const price = products.find((product: any) => product.id === productId).price;
+        return acc + (price * quantity);
+      }, 0);
 
-    return products;
+      const totalItems = items.reduce((acc, orderItem) => {
+        const { quantity } = orderItem;
+        return acc + quantity;
+      }, 0);
 
-    return {
-      service: 'Orders Microservice',
-      createOrderDto
+      // 3. Crear una transaccion en la base de datos
+      const order = await this.order.create({
+        data: {
+          totalAmount,
+          totalItems,
+          status: 'PENDING', // Add required status field
+          orderItems: {
+            createMany: {
+              data: [],
+            },  
+          },
+        },
+      });
+
+      return order;
+      
+    } catch (error) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Check logs for more information',
+      });
     }
-    // return this.order.create({
-    //   data: createOrderDto,
-    // });
   }
 
   async findAll(orderPaginationDto: OrderPaginationDto) {
