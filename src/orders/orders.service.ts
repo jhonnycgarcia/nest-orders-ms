@@ -27,7 +27,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     try {
       const { items } = createOrderDto;
       const ids = items.map((item) => item.productId);
-  
+
       // 1. Confirmar los Ids de los productos
       const products = await firstValueFrom(
         this.client.send({ cmd: 'validate_products' }, { ids })
@@ -58,7 +58,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
                 quantity: item.quantity,
                 price: products.find((product: any) => product.id === item.productId).price,
               })),
-            },  
+            },
           },
         },
         include: {
@@ -79,7 +79,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
           name: products.find((product: any) => product.id === item.product).name,
         })),
       };
-      
+
     } catch (error) {
       throw new RpcException({
         status: HttpStatus.BAD_REQUEST,
@@ -91,13 +91,13 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   async findAll(orderPaginationDto: OrderPaginationDto) {
     const { page, limit, status } = orderPaginationDto;
 
-    
+
     const total = await this.order.count({
       where: {
         status,
       },
     });
-    
+
     const lastPage = Math.ceil(total / limit!);
     const skip = (page! - 1) * limit!;
     const orders = await this.order.findMany({
@@ -159,7 +159,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     const { id, status } = changeOrderStatusDto;
     const order = await this.findOne(id);
 
-    if(order.status === status) {
+    if (order.status === status) {
       return order;
     }
 
