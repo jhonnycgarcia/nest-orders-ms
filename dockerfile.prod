@@ -22,12 +22,13 @@ COPY --from=deps /usr/src/app/package-lock.json ./package-lock.json
 COPY . .
 
 # Construir la app
+RUN npx prisma migrate deploy
+RUN npx prisma generate
 RUN npm run build
 
 # Limpiar los modulos de node
 RUN npm ci -f --only=production && npm cache clean --force
 
-RUN npx prisma generate
 
 
 
