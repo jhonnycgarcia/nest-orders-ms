@@ -10,6 +10,8 @@ RUN npm install
 
 # Builder -  Construye la aplicación
 FROM node:21-alpine3.19 AS builder
+ARG ORDERS_MS_DATABASE_URL
+ENV DATABASE_URL=${ORDERS_MS_DATABASE_URL}
 WORKDIR /usr/src/app
 
 # Copiar de deps los modulos de node
@@ -20,6 +22,7 @@ COPY --from=deps /usr/src/app/package-lock.json ./package-lock.json
 
 # Copiar todo el codigo de la app
 COPY . .
+
 
 # Construir la app
 RUN npx prisma migrate deploy
